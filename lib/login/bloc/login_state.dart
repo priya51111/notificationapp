@@ -6,7 +6,11 @@ class UserInitial extends UserState {}
 
 class UserLoading extends UserState {}
 
-class UserCreated extends UserState {}
+class UserCreated extends UserState {
+  final User createResponse; // You can replace `dynamic` with the actual type
+
+  UserCreated(this.createResponse);
+}
 
 class UserAuthenticated extends UserState {
   final AuthResponse authResponse;
