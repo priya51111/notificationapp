@@ -1,39 +1,33 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:notificationapp/login/model/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 
 class UserRepository {
-  final String apiUrl = 'https://app-project-7.onrender.com/api'; // Replace with actual API
-  
-  Future<void> createUser(String mailId, String password) async {
-    if (mailId.isEmpty || password.isEmpty) {
-      throw Exception("Mail and password are missing");
-    }
-
-    final response = await http.post(
-      Uri.parse('$apiUrl/register'),
-      body: jsonEncode({
-        'mailId': mailId,
-        'password': password,
-      }),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to create user');
-    }
-
-    final user = User(
-      userId: generateUserId(),
-      mailId: mailId,
-      password: password,
-    );
-
-    final users = await getUsersFromLocal();
-    users.add(user);
-    await saveUsersToLocal(users);
+  final String apiUrl = 'https://app-project-9.onrender.com'; // Replace with actual API
+Future<User> createUser(String mailId, String password) async {
+  if (mailId.isEmpty || password.isEmpty) {
+    throw Exception("Mail and password are missing");
   }
+
+  final response = await http.post(
+    Uri.parse('$apiUrl/api/user'),
+    body: jsonEncode({
+      'mailId': mailId,
+      'password': password,
+    }),
+    headers: {'Content-Type': 'application/json'},
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to create user');
+  }
+
+  // Return the created user based on the API response
+  final user = User.fromJson(json.decode(response.body));
+  return user;
+}
+
 
   Future<AuthResponse> signIn(String mailId, String password) async {
     if (mailId.isEmpty || password.isEmpty) {
@@ -41,7 +35,7 @@ class UserRepository {
     }
 
     final response = await http.post(
-      Uri.parse('$apiUrl/login'),
+      Uri.parse('$apiUrl/api/login'),
       body: jsonEncode({
         'mailId': mailId,
         'password': password,
