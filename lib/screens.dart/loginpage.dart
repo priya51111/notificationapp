@@ -9,7 +9,7 @@ class Loginpage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController mailController = TextEditingController();
+    final TextEditingController mailIdController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
 
     return Scaffold(
@@ -80,7 +80,7 @@ class Loginpage extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: TextFormField(
-                        controller: mailController,
+                        controller: mailIdController,
                         decoration: InputDecoration(
                             focusColor: const Color.fromARGB(135, 33, 149, 243),
                             fillColor: const Color.fromARGB(135, 33, 149, 243),
@@ -135,11 +135,11 @@ class Loginpage extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(10),
                                 )),
                             onPressed: () {
-                              final mailId = mailController.text;
+                              final email = mailIdController.text;
 
                               final password = passwordController.text;
                               context.read<UserBloc>().add(CreateUser(
-                                  mailId: mailId,
+                                  email: email,
                                   password: password ));
                             },
                             child: const Text(

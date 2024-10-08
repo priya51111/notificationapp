@@ -15,17 +15,28 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<SignOutUser>(_onSignOutUser);
     on<CheckTokenExpiry>(_onCheckTokenExpiry);
   }
-Future<void> _onCreateUser(CreateUser event, Emitter<UserState> emit) async {
+Future<void> _onCreateUser(
+  CreateUser event,
+  Emitter<UserState> emit,
+) async {
+  emit(UserLoading());
+  logger.i('Creating user: ${event.email}'); // Log email only for security
+
   try {
-    emit(UserLoading());
-    final User createResponse = await userRepository.createUser(event.mailId, event.password);
-    emit(UserCreated(createResponse));  
-    logger.i("User created successfully: ${createResponse.userId}");
-  } catch (e) {
-    emit(UserError(e.toString()));
-    logger.e("Error creating user: ${e.toString()}");
+    // Call repository to create user with email and password directly
+    final createdUser = await userRepository.createUser(event.email, event.password);
+
+    // Emit the created user state
+    emit(UserCreated(createdUser));
+
+    logger.i('User created successfully: ${createdUser.id}');
+  } catch (error) {
+    logger.e('Error creating user: $error');
+    emit(UserError(error.toString()));
   }
 }
+
+
 
 
   Future<void> _onSignInUser(SignInUser event, Emitter<UserState> emit) async {

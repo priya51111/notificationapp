@@ -7,31 +7,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserRepository {
   final String apiUrl =
       'https://app-project-9.onrender.com'; 
-  Future<User> createUser(String mailId, String password) async {
-  if (mailId.isEmpty || password.isEmpty) {
-    throw Exception("Mail and password are missing");
+ Future<User> createUser(String email, String password) async {
+  if (email.isEmpty || password.isEmpty) {
+    throw Exception("Email and password must not be empty.");
   }
 
   try {
     final response = await http.post(
       Uri.parse('$apiUrl/api/user'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'mailId': mailId,
+        'email': email,
         'password': password,
       }),
-      headers: {'Content-Type': 'application/json'},
     );
 
-    // Log the full response for debugging
     Logger().i("API Response: ${response.statusCode} - ${response.body}");
-    Logger().i("Request: POST $apiUrl/api/user");
-    Logger().i("Request Body: {mailId: $mailId, password: $password}");
-    Logger().i("Response Status Code: ${response.statusCode}");
-    Logger().i("Response Body: ${response.body}");
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final user = User.fromJson(json.decode(response.body));
-      return user;
+      final responseBody = json.decode(response.body);
+      if (responseBody['data'] != null && responseBody['data']['user'] != null) {
+        final userJson = responseBody['data']['user'];
+        final user = User.fromJson(userJson);
+        return user;
+      } else {
+        throw Exception("User data is null");
+      }
     } else if (response.statusCode == 400) {
       throw Exception("Bad Request: ${response.body}");
     } else if (response.statusCode == 500) {
@@ -44,6 +45,7 @@ class UserRepository {
     throw Exception('Failed to create user');
   }
 }
+
 
 
   Future<AuthResponse> signIn(String mailId, String password) async {

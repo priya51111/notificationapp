@@ -1,10 +1,10 @@
 abstract class UserEvent {}
 
 class CreateUser extends UserEvent {
-  final String mailId;
+  final String email;
   final String password;
 
-  CreateUser({required this.mailId, required this.password});
+  CreateUser({required this.email, required this.password});
 }
 
 class SignInUser extends UserEvent {
