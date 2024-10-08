@@ -16,7 +16,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final TaskRepository taskRepository;
   final FlutterLocalNotificationsPlugin localNotificationsPlugin;
   final Logger logger = Logger();
-
+ 
   TaskBloc({
     required this.taskRepository,
     required this.localNotificationsPlugin,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:notificationapp/login/model/models.dart';
@@ -7,44 +8,45 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserRepository {
   final String apiUrl =
       'https://app-project-9.onrender.com'; 
- Future<User> createUser(String email, String password) async {
-  if (email.isEmpty || password.isEmpty) {
-    throw Exception("Email and password must not be empty.");
-  }
+final box = GetStorage(); // Initialize GetStorage
 
-  try {
-    final response = await http.post(
-      Uri.parse('$apiUrl/api/user'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
-    );
+  Future<User> createUser(String email, String password) async {
+    if (email.isEmpty || password.isEmpty) {
+      throw Exception("Mail and password are missing");
+    }
 
-    Logger().i("API Response: ${response.statusCode} - ${response.body}");
+    try {
+      final response = await http.post(
+        Uri.parse('$apiUrl/api/user'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+        }),
+      );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final responseBody = json.decode(response.body);
-      if (responseBody['data'] != null && responseBody['data']['user'] != null) {
-        final userJson = responseBody['data']['user'];
-        final user = User.fromJson(userJson);
+      // Log the full response for debugging
+      Logger().i("API Response: ${response.statusCode} - ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final user = User.fromJson(json.decode(response.body));
+
+        // Store user ID in local storage
+        box.write('userId', user.id); // Save the user ID
         return user;
       } else {
-        throw Exception("User data is null");
+        throw Exception("Error: ${response.body}");
       }
-    } else if (response.statusCode == 400) {
-      throw Exception("Bad Request: ${response.body}");
-    } else if (response.statusCode == 500) {
-      throw Exception("Server Error: ${response.body}");
-    } else {
-      throw Exception("Unexpected error: ${response.statusCode} - ${response.body}");
+    } catch (e) {
+      Logger().e("Error creating user: $e");
+      throw Exception('Failed to create user');
     }
-  } catch (e) {
-    Logger().e("Error creating user: $e");
-    throw Exception('Failed to create user');
   }
-}
+
+  // Method to retrieve user ID
+  String? getUserId() {
+    return box.read('userId');
+  }
 
 
 
