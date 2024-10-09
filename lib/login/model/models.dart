@@ -22,25 +22,25 @@ class User {
   }
 }
 
-
-
 class AuthResponse {
   final String token;
-  final DateTime expiry;
 
-  AuthResponse({required this.token, required this.expiry});
+
+  AuthResponse(
+      {required this.token,});
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
     return AuthResponse(
       token: json['token'],
-      expiry: DateTime.parse(json['expiry']),
+
+     
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'token': token,
-      'expiry': expiry.toIso8601String(),
+      
     };
   }
 }

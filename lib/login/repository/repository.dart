@@ -6,9 +6,9 @@ import 'package:notificationapp/login/model/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserRepository {
-  final String apiUrl =
-      'https://app-project-9.onrender.com'; 
-final box = GetStorage(); // Initialize GetStorage
+  final String apiUrl = 'https://app-project-9.onrender.com';
+  final box = GetStorage();
+  final Logger logger = Logger(); // Initialize GetStorage
 
   Future<User> createUser(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
@@ -48,31 +48,36 @@ final box = GetStorage(); // Initialize GetStorage
     return box.read('userId');
   }
 
-
-
-  Future<AuthResponse> signIn(String mailId, String password) async {
-    if (mailId.isEmpty || password.isEmpty) {
-      throw Exception("Mail and password are missing");
+  Future<AuthResponse> signIn(String email, String password) async {
+    if (email.isEmpty || password.isEmpty) {
+      throw Exception("Email and password cannot be empty");
     }
 
     final response = await http.post(
       Uri.parse('$apiUrl/api/login'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'mailId': mailId,
+        'email': email,
         'password': password,
       }),
-      headers: {'Content-Type': 'application/json'},
     );
+
+    // Log the response for debugging
+    logger.i("Response Status Code: ${response.statusCode}");
+    logger.i("Response Body: ${response.body}");
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final authResponse = AuthResponse.fromJson(data);
+      final token = data['token'];
+
+      if (token.isEmpty) {
+        throw Exception('Invalid credentials: token or userId is missing');
+      }
 
       final prefs = await SharedPreferences.getInstance();
-      prefs.setString('token', authResponse.token);
-      prefs.setString('tokenExpiry', authResponse.expiry.toIso8601String());
+      await prefs.setString('token', token);
 
-      return authResponse;
+      return AuthResponse(token: token);
     } else {
       throw Exception('Failed to sign in');
     }

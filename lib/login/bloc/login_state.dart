@@ -13,9 +13,9 @@ class UserCreated extends UserState {
 }
 
 class UserAuthenticated extends UserState {
-  final AuthResponse authResponse;
+  final String token;
 
-  UserAuthenticated(this.authResponse);
+  UserAuthenticated(this.token);
 }
 
 class UserSignOut extends UserState {}

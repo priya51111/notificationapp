@@ -8,10 +8,10 @@ class CreateUser extends UserEvent {
 }
 
 class SignInUser extends UserEvent {
-  final String mailId;
+  final String email;
   final String password;
 
-  SignInUser({required this.mailId, required this.password});
+  SignInUser({required this.email, required this.password});
 }
 
 class SignOutUser extends UserEvent {}

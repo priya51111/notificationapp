@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_storage/get_storage.dart';
 
 
 import '../task/bloc/task_bloc.dart';
@@ -13,9 +14,9 @@ import 'bloc/menu_state.dart';
 import 'model.dart';
 
 class TaskMenuPage extends StatefulWidget {
-  final String userId;
+  final String? userId;
 
-  TaskMenuPage({required this.userId});
+  TaskMenuPage({ this.userId});
 
   @override
   _TaskMenuPageState createState() => _TaskMenuPageState();
@@ -25,12 +26,18 @@ class _TaskMenuPageState extends State<TaskMenuPage> {
   String? dropdownValue;
   bool isTaskSelected = false; // Tracks whether a task is selected
   Task? selectedTask; // Tracks the selected task
-
-  @override
-  void initState() {
+   void initState() {
     super.initState();
-    context.read<TaskBloc>().add(FetchTasksByUserId(userId: widget.userId));
+    // If userId is not provided, retrieve from storage
+    final storedUserId = widget.userId ?? GetStorage().read('userId'); // Use GetStorage to retrieve the userId
+    if (storedUserId != null) {
+      context.read<TaskBloc>().add(FetchTasksByUserId(userId: storedUserId));
+    } else {
+      // Handle the case where userId is not available
+      // For example, show an error or navigate back
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +236,7 @@ class _TaskMenuPageState extends State<TaskMenuPage> {
               onPressed: () {
                 final menuName = menuController.text;
                 if (menuName.isNotEmpty) {
-                  context.read<MenuBloc>().add(AddMenuEvent(menuname: menuName, userId: widget.userId, date: ''));
+                  context.read<MenuBloc>().add(AddMenuEvent(menuname: menuName, userId: '', date: ''));
                   Navigator.of(context).pop();
                 }
               },

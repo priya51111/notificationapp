@@ -3,10 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:notificationapp/login/bloc/login_bloc.dart';
 import 'package:notificationapp/login/bloc/login_event.dart';
 import 'package:notificationapp/login/bloc/login_state.dart';
-import 'package:notificationapp/screens.dart/siginin.dart';
+import 'package:notificationapp/menu/view.dart';
 
-class Loginpage extends StatelessWidget {
-  const Loginpage({super.key});
+class Signpage extends StatelessWidget {
+  const Signpage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,16 +20,14 @@ class Loginpage extends StatelessWidget {
           if (state is UserError) {
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text(state.message)));
-          } else if (state is UserCreated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User created successfully')));
           } else if (state is UserAuthenticated) {
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Sign in successful')));
-          } else if (state is UserSignOut) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Signed out successfully')));
-          } else if (state is TokenExpired) {
+                 Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => TaskMenuPage()),
+            );
+          }else if (state is TokenExpired) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text('Session expired. Please sign in again.')));
           }
@@ -136,25 +134,18 @@ class Loginpage extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(10),
                                 )),
                             onPressed: () {
-                              
                               final email = mailIdController.text;
 
                               final password = passwordController.text;
-                              context.read<UserBloc>().add(CreateUser(
+                              context.read<UserBloc>().add(SignInUser(
                                   email: email,
                                   password: password ));
                             },
                             child: const Text(
-                              'Login',
+                              'signin',
                               style: TextStyle(color: Color(0xFFFFF8F8)),
                             ))),
-                  )),
-                  ElevatedButton(onPressed: (){
-                      Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => Signpage()), // Navigate to NewPage
-    );
-                  }, child: Text('sigin'))
+                  ))
                 ],
               ),
             ),
