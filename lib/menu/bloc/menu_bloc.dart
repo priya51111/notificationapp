@@ -10,7 +10,7 @@ class MenuBloc extends Bloc<MenuEvent, MenuState> {
 
   MenuBloc({required this.menuRepository}) : super(MenuLoading()) {
     on<FetchMenuListEvent>(_onFetchMenuList);
-    on<AddMenuEvent>(_onAddMenu);
+    on<CreateMenuEvent>(_onCreateMenu);
   }
 
   Future<void> _onFetchMenuList(FetchMenuListEvent event, Emitter<MenuState> emit) async {
@@ -24,21 +24,23 @@ class MenuBloc extends Bloc<MenuEvent, MenuState> {
     }
   }
 
-  Future<void> _onAddMenu(AddMenuEvent event, Emitter<MenuState> emit) async {
-  try {
-    emit(MenuLoading());
-    Menus newMenu = Menus(
-      menuId: '', // Initially, this can be empty
-      menuName: event.menuname,
-      userId: event.userId,
-      date: event.date,
-    );
-    Menus addedMenu = await menuRepository.addMenu(newMenu);
-    emit(MenuAdded(menuId: addedMenu.menuId));
-  } catch (e) {
-    print('Error adding menu: $e'); // Logging the error
-    emit(MenuError(message: 'Failed to add menu: ${e.toString()}'));
+  // Method to handle menu creation
+  Future<void> _onCreateMenu(CreateMenuEvent event, Emitter<MenuState> emit) async {
+    emit(MenuLoading());  // Emit loading state while processing
+
+    try {
+      // Call the repository to create the menu
+      final menuId = await menuRepository.createMenu(event.menuName, event.date);
+
+      // Create a Menu object to represent the response
+      final menu = Menus(menuId: menuId, menuName: event.menuName, date: event.date);
+
+      // Emit success state with the created menu
+      emit(MenuCreated(menu: menu));
+    } catch (e) {
+      // Emit error state in case of failure
+      emit(MenuError(message: e.toString()));
+    }
   }
-}
 
 }

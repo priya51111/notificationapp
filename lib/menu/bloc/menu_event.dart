@@ -7,15 +7,13 @@ class FetchMenuListEvent extends MenuEvent {
   FetchMenuListEvent({required this.userId, required this.date});
 }
 
-class AddMenuEvent extends MenuEvent {    
-  final String menuname;
-  final String userId;
+// Event to create a menu
+class CreateMenuEvent extends MenuEvent {
+  final String menuName;
   final String date;
 
-  AddMenuEvent({
-    required this.menuname,
-    required this.userId,
-    required this.date,
-  });
+CreateMenuEvent({required this.menuName, required this.date});
+
+  
 }
 
