@@ -217,7 +217,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                         },
                         items: menuList.map((Menus menu) {
                           return DropdownMenuItem<String>(
-                            value: menu.menuId,
+                          
                             child: Text(menu.menuName),
                           );
                         }).toList(),
@@ -249,8 +249,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                               task: task,
                               date: date,
                               time: time,
-                              menuId: [], // Replace with appropriate menu ID logic
-                              userId: '',
+                            
                             ));
                       }
                     },

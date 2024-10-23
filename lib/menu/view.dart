@@ -28,7 +28,8 @@ class _TaskMenuPageState extends State<TaskMenuPage> {
   final TextEditingController _dateController = TextEditingController();
   bool isTaskSelected = false;
   Task? selectedTask;
-  bool canCreateTask = false; // Tracks if the task can be created after New List is selected
+  bool canCreateTask =
+      false; // Tracks if the task can be created after New List is selected
 
   @override
   void initState() {
@@ -46,76 +47,52 @@ class _TaskMenuPageState extends State<TaskMenuPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color.fromARGB(134, 4, 83, 147),
       appBar: AppBar(
-        title: isTaskSelected
-            ? Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.share),
-                    onPressed: () {
-                      // Implement share functionality here if needed
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      if (selectedTask != null && selectedTask!.taskId != null) {
-                        context.read<TaskBloc>().add(DeleteTaskEvent(
-                            taskId: selectedTask?.taskId ?? 'default_value'));
-                        setState(() {
-                          isTaskSelected = false;
-                          selectedTask = null;
-                        });
+        backgroundColor: Color.fromARGB(135, 33, 149, 243),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, size: 30),
+            SizedBox(width: 10),
+            BlocBuilder<MenuBloc, MenuState>(
+              builder: (context, state) {
+                if (state is MenuLoading) {
+                  return CircularProgressIndicator();
+                } else if (state is MenuLoaded) {
+                  final menuList = state.menuList;
+                  print("Menu List: $menuList"); // Debug print
+                  if (menuList.isEmpty) {
+                    return Text('No menus available');
+                  }
+                  final dropdownItems = menuList.map((Menus menu) {
+                    return DropdownMenuItem<String>(child: Text(menu.menuName));
+                  }).toList();
+
+                  dropdownItems.add(DropdownMenuItem<String>(
+                      value: 'New List', child: Text('New List')));
+
+                  return DropdownButton<String>(
+                    value: dropdownValue,
+                    items: dropdownItems,
+                    onChanged: (String? value) {
+                      if (value == "New List") {
+                        _showAddMenuDialog(context);
                       } else {
-                        print('No task is selected or taskId is null');
+                        setState(() {
+                          dropdownValue = value;
+                          canCreateTask = false;
+                        });
                       }
                     },
-                  ),
-                ],
-              )
-            : Row(
-                children: [
-                  Icon(Icons.check_circle, size: 30),
-                  SizedBox(width: 10),
-                  BlocBuilder<MenuBloc, MenuState>(
-                    builder: (context, state) {
-                      if (state is MenuLoading) {
-                        return CircularProgressIndicator();
-                      } else if (state is MenuLoaded) {
-                        final menuList = state.menuList;
-                        return DropdownButton<String>(
-                          value: dropdownValue,
-                          items: [
-                            ...menuList.map((Menus menu) {
-                              return DropdownMenuItem<String>(
-                                value: menu.menuId,
-                                child: Text(menu.menuName),
-                              );
-                            }).toList(),
-                            DropdownMenuItem<String>(
-                              value: "New List",
-                              child: Text("New List"),
-                            ),
-                          ],
-                          onChanged: (String? value) {
-                            if (value == "New List") {
-                              _showAddMenuDialog(context);
-                            } else {
-                              setState(() {
-                                dropdownValue = value;
-                                canCreateTask = false; // Task creation only after "New List"
-                              });
-                            }
-                          },
-                        );
-                      } else if (state is MenuError) {
-                        return Text('Error: ${state.message}');
-                      }
-                      return SizedBox.shrink();
-                    },
-                  ),
-                ],
-              ),
+                  );
+                } else if (state is MenuError) {
+                  return Text('Error: ${state.message}');
+                }
+                return SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
       ),
       body: BlocBuilder<TaskBloc, TaskState>(
         builder: (context, state) {
@@ -312,11 +289,11 @@ class _TaskMenuPageState extends State<TaskMenuPage> {
                         CreateMenuEvent(menuName: menuName, date: date),
                       );
                   Navigator.of(context).pop();
-                }else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Please fill all fields')),
-                        );
-                      }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Please fill all fields')),
+                  );
+                }
               },
               child: Text('Add'),
             ),
@@ -343,5 +320,4 @@ class _TaskMenuPageState extends State<TaskMenuPage> {
       },
     );
   }
-} 
-
+}

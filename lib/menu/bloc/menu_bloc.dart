@@ -1,46 +1,58 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../model.dart';
 import '../repo/menu_repository.dart';
 import 'menu_event.dart';
 import 'menu_state.dart';
+import 'package:get_storage/get_storage.dart';  // Import GetStorage
+
 
 class MenuBloc extends Bloc<MenuEvent, MenuState> {
   final MenuRepository menuRepository;
+  final GetStorage box = GetStorage();  // Initialize GetStorage instance
 
-  MenuBloc({required this.menuRepository}) : super(MenuLoading()) {
-    on<FetchMenuListEvent>(_onFetchMenuList);
+  MenuBloc({required this.menuRepository}) : super(MenuInitial()) {
     on<CreateMenuEvent>(_onCreateMenu);
+    on<FetchMenuListEvent>(_onFetchMenuList);
   }
 
-  Future<void> _onFetchMenuList(FetchMenuListEvent event, Emitter<MenuState> emit) async {
-    try {
-      emit(MenuLoading());
-      final menuList = await menuRepository.getMenuList(event.userId, event.date);
-      emit(MenuLoaded(menuList: menuList)); // Pass the fetched menu list here
-    } catch (e) {
-      print('Error fetching menu list: $e'); // Logging the error
-      emit(MenuError(message: 'Failed to fetch menu list: ${e.toString()}'));
-    }
-  }
-
-  // Method to handle menu creation
-  Future<void> _onCreateMenu(CreateMenuEvent event, Emitter<MenuState> emit) async {
-    emit(MenuLoading());  // Emit loading state while processing
+  // Handle creating a new menu using Future and emit
+  Future<void> _onCreateMenu(
+    CreateMenuEvent event,
+    Emitter<MenuState> emit,
+  ) async {
+    emit(MenuLoading());
 
     try {
-      // Call the repository to create the menu
+      final userId = box.read('userId');  // Fetch userId from GetStorage
+      if (userId == null) {
+        emit(MenuError(message: 'User ID is missing'));
+        return;
+      }
+
       final menuId = await menuRepository.createMenu(event.menuName, event.date);
-
-      // Create a Menu object to represent the response
-      final menu = Menus(menuId: menuId, menuName: event.menuName, date: event.date);
-
-      // Emit success state with the created menu
-      emit(MenuCreated(menu: menu));
+      emit(MenuCreated(menuId: menuId)); // Pass the created menuId
     } catch (e) {
-      // Emit error state in case of failure
       emit(MenuError(message: e.toString()));
     }
   }
 
+  // Handle fetching the menu list using Future and emit
+  Future<void> _onFetchMenuList(
+    FetchMenuListEvent event,
+    Emitter<MenuState> emit,
+  ) async {
+    emit(MenuLoading());
+
+    try {
+      final userId = box.read('userId');  // Fetch userId from GetStorage
+      if (userId == null) {
+        emit(MenuError(message: 'User ID is missing'));
+        return;
+      }
+
+      final menuList = await menuRepository.getMenuList(userId, event.date);  // Pass userId here
+      emit(MenuLoaded(menuList: menuList)); // Emit the loaded menu list
+    } catch (e) {
+      emit(MenuError(message: e.toString()));
+    }
+  }
 }
