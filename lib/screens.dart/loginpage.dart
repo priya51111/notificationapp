@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:notificationapp/login/bloc/login_bloc.dart';
 import 'package:notificationapp/login/bloc/login_event.dart';
 import 'package:notificationapp/login/bloc/login_state.dart';
-import 'package:notificationapp/screens.dart/siginin.dart';
+import 'package:notificationapp/menu/view.dart';
 
 class Loginpage extends StatelessWidget {
   const Loginpage({super.key});
@@ -23,6 +23,10 @@ class Loginpage extends StatelessWidget {
           } else if (state is UserCreated) {
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('User created successfully')));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => TaskMenuPage()),
+            );
           } else if (state is UserAuthenticated) {
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Sign in successful')));
@@ -38,7 +42,7 @@ class Loginpage extends StatelessWidget {
           alignment: Alignment.topLeft,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 580),
+              padding: const EdgeInsets.only(top: 570),
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -52,7 +56,7 @@ class Loginpage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: EdgeInsets.only(left: 110, top: 40),
+                  padding: EdgeInsets.only(left: 110, top: 39),
                   child: Text(
                     'Todo',
                     style: TextStyle(
@@ -65,7 +69,7 @@ class Loginpage extends StatelessWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 190, left: 10, right: 10),
+              padding: const EdgeInsets.only(top: 180, left: 10, right: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -81,15 +85,21 @@ class Loginpage extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: TextFormField(
+                        cursorColor: Colors.blue,
                         controller: mailIdController,
                         decoration: InputDecoration(
-                            focusColor: const Color.fromARGB(135, 33, 149, 243),
-                            fillColor: const Color.fromARGB(135, 33, 149, 243),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Color.fromARGB(135, 33, 149, 243)),
-                            )),
+                          enabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                                color: Color.fromARGB(135, 33, 149, 243)),
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.blue),
+                          ),
+                        ),
                         style:
                             const TextStyle(color: Colors.white, fontSize: 20),
                       ),
@@ -107,16 +117,22 @@ class Loginpage extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: TextFormField(
+                        cursorColor: Colors.blue,
                         controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                            focusColor: const Color.fromARGB(135, 33, 149, 243),
-                            fillColor: const Color.fromARGB(135, 33, 149, 243),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Color.fromARGB(135, 33, 149, 243)),
-                            )),
+                          enabledBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                                color: Color.fromARGB(135, 33, 149, 243)),
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.blue),
+                          ),
+                        ),
                         style:
                             const TextStyle(color: Colors.white, fontSize: 20),
                       ),
@@ -124,10 +140,10 @@ class Loginpage extends StatelessWidget {
                   ),
                   Center(
                       child: Padding(
-                    padding: const EdgeInsets.only(top: 50),
+                    padding: const EdgeInsets.only(top: 30),
                     child: SizedBox(
-                        height: 50,
-                        width: 110,
+                        height: 40,
+                        width: 100,
                         child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                                 backgroundColor:
@@ -136,25 +152,38 @@ class Loginpage extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(10),
                                 )),
                             onPressed: () {
-                              
                               final email = mailIdController.text;
 
                               final password = passwordController.text;
-                              context.read<UserBloc>().add(CreateUser(
-                                  email: email,
-                                  password: password ));
+                              context.read<UserBloc>().add(
+                                  CreateUser(email: email, password: password));
+                              context.read<UserBloc>().add(
+                                  SignInUser(email: email, password: password));
                             },
                             child: const Text(
                               'Login',
                               style: TextStyle(color: Color(0xFFFFF8F8)),
                             ))),
                   )),
-                  ElevatedButton(onPressed: (){
-                      Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => Signpage()), // Navigate to NewPage
-    );
-                  }, child: Text('sigin'))
+                  Center(
+                      child: Padding(
+                    padding: const EdgeInsets.only(top: 30),
+                    child: SizedBox(
+                        height: 40,
+                        width: 100,
+                        child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    const Color.fromARGB(135, 33, 149, 243),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                )),
+                            onPressed: () {},
+                            child: const Text(
+                              'signin',
+                              style: TextStyle(color: Color(0xFFFFF8F8)),
+                            ))),
+                  )),
                 ],
               ),
             ),
