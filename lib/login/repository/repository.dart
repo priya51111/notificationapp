@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserRepository {
   final String apiUrl = 'https://app-project-9.onrender.com';
   final box = GetStorage();
-  final Logger logger = Logger(); // Initialize GetStorage
+  final Logger logger = Logger(); 
 
   Future<User> createUser(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
@@ -24,15 +24,14 @@ class UserRepository {
           'password': password,
         }),
       );
-
-      // Log the full response for debugging
+      Logger().i("Request: POST $apiUrl/api/user");
+      Logger().i("Request Body: {mailId: $email, password: $password}");
       Logger().i("API Response: ${response.statusCode} - ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final user = User.fromJson(json.decode(response.body));
 
-        // Store user ID in local storage
-        box.write('userId', user.id); // Save the user ID
+        box.write('userId', user.id);
         return user;
       } else {
         throw Exception("Error: ${response.body}");
@@ -43,7 +42,6 @@ class UserRepository {
     }
   }
 
-  // Method to retrieve user ID
   String? getUserId() {
     return box.read('userId');
   }
@@ -62,7 +60,6 @@ class UserRepository {
       }),
     );
 
-    // Log the response for debugging
     logger.i("Response Status Code: ${response.statusCode}");
     logger.i("Response Body: ${response.body}");
 
@@ -119,4 +116,10 @@ class UserRepository {
     final expiryDate = DateTime.parse(tokenExpiry);
     return DateTime.now().isAfter(expiryDate);
   }
+
+
+ 
+  
 }
+
+

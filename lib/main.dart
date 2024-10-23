@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_storage/get_storage.dart'; // Import GetStorage if you're using it
+import 'package:get_storage/get_storage.dart'; 
 import 'package:notificationapp/login/bloc/login_bloc.dart';
 import 'package:notificationapp/login/repository/repository.dart';
+import 'package:notificationapp/logout/LogoutPage.dart';
+import 'package:notificationapp/screens.dart/homepage.dart';
 import 'package:notificationapp/screens.dart/loginpage.dart';
 import 'package:notificationapp/menu/repo/menu_repository.dart';
 import 'package:notificationapp/task/bloc/task_bloc.dart';
 import 'package:notificationapp/task/repository/task_repository.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // Import for local notifications
-import 'package:notificationapp/menu/bloc/menu_bloc.dart'; // Import MenuBloc if it isn't already
-
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; 
+import 'package:notificationapp/menu/bloc/menu_bloc.dart'; 
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure binding is initialized
-  await GetStorage.init(); // Initialize GetStorage
+  WidgetsFlutterBinding.ensureInitialized(); 
+  await GetStorage.init(); 
 
   runApp(const MyApp());
 }
@@ -23,10 +24,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize repositories and plugins
     final TaskRepository taskRepository = TaskRepository();
     final UserRepository userRepository = UserRepository();
-    final FlutterLocalNotificationsPlugin localNotificationsPlugin = FlutterLocalNotificationsPlugin();
+    final FlutterLocalNotificationsPlugin localNotificationsPlugin =
+        FlutterLocalNotificationsPlugin();
 
     return MultiBlocProvider(
       providers: [
@@ -35,22 +36,25 @@ class MyApp extends StatelessWidget {
             taskRepository: taskRepository,
             localNotificationsPlugin: localNotificationsPlugin,
             userRepository: userRepository,
-          ), // Initialize TaskBloc
+          ), 
         ),
         BlocProvider(
-          create: (context) => MenuBloc(menuRepository: MenuRepository()), // Initialize MenuBloc
+          create: (context) =>
+              MenuBloc(menuRepository: MenuRepository()),
         ),
         BlocProvider(
-          create: (context) => UserBloc(userRepository: userRepository), // Initialize LoginBloc
+          create: (context) =>
+              UserBloc(userRepository: userRepository), 
         ),
+
+    
       ],
       child: MaterialApp(
-        title: 'Task Manager',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: Loginpage()
-      ),
+          title: 'Task Manager',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+          ),
+          home: LogoutPage()),
     );
   }
 }
