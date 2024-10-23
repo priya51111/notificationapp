@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:notificationapp/logout/repository/Logout_repository.dart';
+
+import '../logout/bloc/Logout_bloc.dart';
+import '../logout/bloc/logout_event.dart';
+import '../logout/bloc/logout_state.dart';
 
 const List<String> list = <String>[
   'All List',
@@ -20,10 +26,12 @@ enum menu {
   SendFeedback,
   followus,
   invite,
-  setting
+  setting,
+  Logout
 }
 
 class homepage extends StatefulWidget {
+  
   const homepage({super.key});
 
   @override
@@ -37,6 +45,7 @@ class _homepageState extends State<homepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color.fromARGB(134, 4, 83, 147),
+      
       appBar: AppBar(
         backgroundColor: Color.fromARGB(135, 33, 149, 243),
         foregroundColor: Colors.white,
@@ -167,6 +176,14 @@ class _homepageState extends State<homepage> {
                             fontSize: 17,
                             fontWeight: FontWeight.normal)),
                   ),
+                  const PopupMenuItem<menu>(
+                    value: menu.followus,
+                    child: Text('Logout',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.normal)),
+                  ),
                 ],
               ),
             ],
@@ -214,10 +231,43 @@ class _homepageState extends State<homepage> {
                   ),
                 ),
               ),
-            )
+            ),
+            ElevatedButton(
+                onPressed: () => _showLogoutDialog(context),
+                child: const Text("Logout"))
           ],
         ),
       ),
     );
   }
+}
+
+void _showLogoutDialog(BuildContext context, String userId, String token) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Logout Confirmation'),
+        content: Text('Do you want to logout?'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('No'),
+            onPressed: () {
+              Navigator.of(context)
+                  .pop(); // Close the dialog without logging out
+            },
+          ),
+          TextButton(
+            child: Text('Yes'),
+            onPressed: () {
+              context.read<LogoutBloc>().add(
+                    LogoutRequested(userId: userId, token: token),
+                  );
+              Navigator.of(context).pop(); // Close the dialog
+            },
+          ),
+        ],
+      );
+    },
+  );
 }

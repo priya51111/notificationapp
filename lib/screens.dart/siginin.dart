@@ -23,11 +23,11 @@ class Signpage extends StatelessWidget {
           } else if (state is UserAuthenticated) {
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Sign in successful')));
-                 Navigator.pushReplacement(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => TaskMenuPage()),
             );
-          }else if (state is TokenExpired) {
+          } else if (state is TokenExpired) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text('Session expired. Please sign in again.')));
           }
@@ -137,9 +137,8 @@ class Signpage extends StatelessWidget {
                               final email = mailIdController.text;
 
                               final password = passwordController.text;
-                              context.read<UserBloc>().add(SignInUser(
-                                  email: email,
-                                  password: password ));
+                              context.read<UserBloc>().add(
+                                  SignInUser(email: email, password: password));
                             },
                             child: const Text(
                               'signin',

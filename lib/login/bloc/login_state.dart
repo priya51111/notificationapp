@@ -7,7 +7,7 @@ class UserInitial extends UserState {}
 class UserLoading extends UserState {}
 
 class UserCreated extends UserState {
- final User user; // Pass the created user to the state
+ final User user;
 
   UserCreated(this.user);
 }
@@ -27,3 +27,6 @@ class UserError extends UserState {
 }
 
 class TokenExpired extends UserState {}
+
+
+
