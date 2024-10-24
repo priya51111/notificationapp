@@ -24,8 +24,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TaskRepository taskRepository = TaskRepository();
     final UserRepository userRepository = UserRepository();
+    final MenuRepository menuRepository =
+        MenuRepository(userRepository: userRepository);
+    final TaskRepository taskRepository = TaskRepository(
+      userRepository: userRepository,
+      menuRepository: menuRepository,
+      
+    );
     final FlutterLocalNotificationsPlugin localNotificationsPlugin =
         FlutterLocalNotificationsPlugin();
 
@@ -34,27 +40,28 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => TaskBloc(
             taskRepository: taskRepository,
+           
             localNotificationsPlugin: localNotificationsPlugin,
             userRepository: userRepository,
-          ), 
+            menuRepository: MenuRepository(userRepository: userRepository),
+          ), // Initialize TaskBloc
         ),
         BlocProvider(
           create: (context) =>
-              MenuBloc(menuRepository: MenuRepository()),
+              UserBloc(userRepository: userRepository), // Initialize LoginBloc
         ),
         BlocProvider(
-          create: (context) =>
-              UserBloc(userRepository: userRepository), 
+          create: (context) => MenuBloc(
+            menuRepository: MenuRepository(userRepository: UserRepository()),
+          ), // Initialize MenuBloc
         ),
-
-    
       ],
       child: MaterialApp(
           title: 'Task Manager',
           theme: ThemeData(
             primarySwatch: Colors.blue,
           ),
-          home: LogoutPage()),
+          home: Loginpage()),
     );
   }
 }

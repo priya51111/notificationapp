@@ -9,9 +9,10 @@ import '../../menu/bloc/menu_event.dart';
 import '../../menu/bloc/menu_state.dart';
 import '../../menu/model.dart';
 import '../../menu/repo/menu_repository.dart';
-import '../bloc/task_bloc.dart';
-import '../bloc/task_event.dart';
-import '../bloc/task_state.dart';
+import '../task/bloc/task_bloc.dart';
+import '../task/bloc/task_event.dart';
+import '../task/bloc/task_state.dart';
+
 
 class CreateTaskPage extends StatefulWidget {
   const CreateTaskPage({super.key});

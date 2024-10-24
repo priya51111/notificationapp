@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:notificationapp/login/bloc/login_bloc.dart';
-import 'package:notificationapp/login/bloc/login_event.dart';
-import 'package:notificationapp/login/bloc/login_state.dart';
-import 'package:notificationapp/menu/view.dart';
+import 'package:notificationapp/screens.dart/homepage.dart';
+
+import '../login/bloc/login_bloc.dart';
+import '../login/bloc/login_event.dart';
+import '../login/bloc/login_state.dart';
+
+
 
 class Signpage extends StatelessWidget {
   const Signpage({super.key});
@@ -23,11 +26,11 @@ class Signpage extends StatelessWidget {
           } else if (state is UserAuthenticated) {
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Sign in successful')));
-            Navigator.pushReplacement(
+                 Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => TaskMenuPage()),
             );
-          } else if (state is TokenExpired) {
+          }else if (state is TokenExpired) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text('Session expired. Please sign in again.')));
           }
@@ -137,8 +140,9 @@ class Signpage extends StatelessWidget {
                               final email = mailIdController.text;
 
                               final password = passwordController.text;
-                              context.read<UserBloc>().add(
-                                  SignInUser(email: email, password: password));
+                              context.read<UserBloc>().add(SignInUser(
+                                  email: email,
+                                  password: password ));
                             },
                             child: const Text(
                               'signin',

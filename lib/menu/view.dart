@@ -1,46 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
 
+import '../login/repository/repository.dart';
 import '../task/bloc/task_bloc.dart';
 import '../task/bloc/task_event.dart';
 import '../task/bloc/task_state.dart';
-import '../task/model.dart';
+import '../task/repository/task_repository.dart';
 import '../task/view/view.dart';
 import 'bloc/menu_bloc.dart';
 import 'bloc/menu_event.dart';
 import 'bloc/menu_state.dart';
-import 'model.dart';
+import 'repo/menu_repository.dart';
 
-class TaskMenuPage extends StatefulWidget {
-  final String? userId;
-
-  TaskMenuPage({this.userId});
-
-  @override
-  _TaskMenuPageState createState() => _TaskMenuPageState();
+enum Menu {
+  TaskLists,
+  AddInBatchMode,
+  RemoveAds,
+  MoreApps,
+  SendFeedback,
+  FollowUs,
+  Invite,
+  Settings
 }
 
-class _TaskMenuPageState extends State<TaskMenuPage> {
+class SimplePage extends StatefulWidget {
+  @override
+  _SimplePageState createState() => _SimplePageState();
+}
+
+class _SimplePageState extends State<SimplePage> {
   String? dropdownValue;
-  bool _isDateSelected = false;
-  final TextEditingController _dateController = TextEditingController();
-  bool isTaskSelected = false;
-  Task? selectedTask;
-  bool canCreateTask =
-      false; // Tracks if the task can be created after New List is selected
+  List<String> dropdownItems = ['New List'];
+  late UserRepository userRepository;
+  late MenuRepository menuRepository;
+  late TaskRepository taskRepository;
 
   @override
   void initState() {
     super.initState();
-    // If userId is not provided, retrieve from storage
-    final storedUserId = widget.userId ?? GetStorage().read('userId');
-    if (storedUserId != null) {
-      context.read<TaskBloc>().add(FetchTasksByUserId(userId: storedUserId));
+    userRepository = UserRepository(); // Initialize the user repository
+    menuRepository = MenuRepository(
+        userRepository:
+            userRepository); // Pass user repository to menu repository
+    taskRepository = TaskRepository(
+      userRepository: userRepository,
+      menuRepository: menuRepository,
+    ); // Pass both repositories to task repositoryn
+
+    _fetchMenus();
+    _fetchTasks();
+  }
+
+  void _fetchMenus() {
+    final userId = userRepository.getUserId();
+    final date = menuRepository.getdate();
+
+    if (userId != null) {
+      context.read<MenuBloc>().add(FetchMenusEvent(userId: userId, date: date));
     } else {
-      // Handle the case where userId is not available
-      // For example, show an error or navigate back
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('User ID is missing'),
+            duration: Duration(seconds: 5)),
+      );
+    }
+  }
+
+  void _fetchTasks() {
+    final userIds = userRepository.getUserId();
+    final dates = taskRepository.date();
+
+    if (userIds != null) {
+      context
+          .read<TaskBloc>()
+          .add(FetchTaskEvent(userId: userIds, date: dates));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('User IDs is missing'),
+            duration: Duration(seconds: 5)),
+      );
     }
   }
 
@@ -53,267 +93,227 @@ class _TaskMenuPageState extends State<TaskMenuPage> {
         title: Row(
           children: [
             Icon(Icons.check_circle, size: 30),
-            SizedBox(width: 10),
-            BlocBuilder<MenuBloc, MenuState>(
-              builder: (context, state) {
-                if (state is MenuLoading) {
-                  return CircularProgressIndicator();
-                } else if (state is MenuLoaded) {
-                  final menuList = state.menuList;
-                  print("Menu List: $menuList"); // Debug print
-                  if (menuList.isEmpty) {
-                    return Text('No menus available');
-                  }
-                  final dropdownItems = menuList.map((Menus menu) {
-                    return DropdownMenuItem<String>(child: Text(menu.menuName));
-                  }).toList();
-
-                  dropdownItems.add(DropdownMenuItem<String>(
-                      value: 'New List', child: Text('New List')));
-
-                  return DropdownButton<String>(
-                    value: dropdownValue,
-                    items: dropdownItems,
-                    onChanged: (String? value) {
-                      if (value == "New List") {
-                        _showAddMenuDialog(context);
-                      } else {
-                        setState(() {
-                          dropdownValue = value;
-                          canCreateTask = false;
-                        });
-                      }
-                    },
+            DropdownButton<String>(
+              value: dropdownValue,
+              hint: Text('Select'),
+              items: dropdownItems.map((String item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (value == 'New List') {
+                  _showNewMenuDialog();
+                } else {
+                  setState(() {
+                    dropdownValue = value;
+                  });
+                }
+              },
+            ),
+            BlocListener<MenuBloc, MenuState>(
+              listener: (context, state) {
+                if (state is MenuCreated) {
+                  setState(() {
+                    if (!dropdownItems.contains(state.menuname)) {
+                      dropdownItems
+                          .add(state.menuname); // Add the newly created menu
+                    }
+                    dropdownValue = state.menuname; // Set as selected
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('Menu created successfully: ${state.menuId}'),
+                      duration: Duration(seconds: 3),
+                    ),
                   );
                 } else if (state is MenuError) {
-                  return Text('Error: ${state.message}');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${state.message}'),
+                      duration: Duration(seconds: 5),
+                    ),
+                  );
+                } else if (state is MenuLoaded) {
+                  setState(() {
+                    dropdownItems = [
+                      'New List',
+                      ...state.menuList.map((menu) => menu.menuname).toList()
+                    ];
+                    dropdownValue = dropdownItems.first;
+                  });
                 }
-                return SizedBox.shrink();
               },
+              child: SizedBox.shrink(),
             ),
           ],
         ),
+        actions: [
+          IconButton(onPressed: () {}, icon: Icon(Icons.search)),
+          _buildPopupMenu()
+        ],
       ),
       body: BlocBuilder<TaskBloc, TaskState>(
         builder: (context, state) {
           if (state is TaskLoading) {
             return Center(child: CircularProgressIndicator());
           } else if (state is TaskSuccess) {
-            if (state.tasks.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/noimage.png',
-                      height: 200,
+            return ListView.builder(
+              itemCount: state.taskList.length,
+              itemBuilder: (context, index) {
+                final task = state.taskList[index];
+                 final menuname = state.menuMap[task.menuId] ?? 'Unknown menu'; // Fetch the menu name
+                return Padding(
+                  padding: const EdgeInsets.all(9),
+                  child: Container(
+                    height: 70,
+                    width: 150,
+                    decoration: BoxDecoration( borderRadius: BorderRadius.circular(25),
+                      color: Color.fromARGB(135, 33, 149, 243),
                     ),
-                    SizedBox(height: 20),
-                    Text(
-                      'No tasks available',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ],
-                ),
-              );
-            } else {
-              return ListView.builder(
-                itemCount: state.tasks.length,
-                itemBuilder: (context, index) {
-                  final task = state.tasks[index];
-                  final taskDueDate = DateTime.parse(task.date);
-                  bool isExpired = DateTime.now().isAfter(taskDueDate);
-
-                  return GestureDetector(
-                    onLongPress: () {
-                      setState(() {
-                        isTaskSelected = true;
-                        selectedTask = task;
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: Duration(milliseconds: 500),
-                      curve: Curves.easeInOut,
-                      padding: EdgeInsets.only(
-                          left: task.isChecked ? 100 : 10, top: 10),
-                      child: task.isChecked
-                          ? SizedBox.shrink()
-                          : Container(
-                              height: 70,
-                              width: 370,
-                              decoration: BoxDecoration(
-                                color: isExpired
-                                    ? Colors.red
-                                    : Color.fromARGB(135, 33, 149, 243),
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                              child: ListTile(
-                                leading: Checkbox(
-                                  side: BorderSide(
-                                    color: Colors.white,
-                                  ),
-                                  value: task.isChecked,
-                                  onChanged: (bool? value) {
-                                    if (value != null && value) {
-                                      context.read<TaskBloc>().add(
-                                          UpdateTaskStatus(
-                                              task: task.copyWith(
-                                                  isChecked: value)));
-                                      _showTaskFinishedDialog(context);
-                                    }
-                                  },
-                                ),
-                                title: Text(
-                                  task.task,
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                subtitle: Row(
-                                  children: [
-                                    Text(
-                                      isExpired ? 'No due' : '${task.date},',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    if (!isExpired)
-                                      Text(
-                                        ' ${task.time}',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                    ),
-                  );
-                },
-              );
-            }
+                    child: Column(
+                      children: [
+                        Text(task.task), // Display task name
+                        SizedBox(width: 10),
+                        Text(
+                            '${task.date} ${task.time}'), // Display date and time
+                        SizedBox(width: 10),
+                        // Handle the list of menuIds
+                         SizedBox(width: 10),
+                  Text(menuname), // Display menu name based on menuId
+                      ],
+                    ),  
+                  ),
+                );
+              },
+            );
           } else if (state is TaskFailure) {
-            return Center(
-                child: Text('Failed to load tasks: ${state.message}'));
+            return Center(child: Text('Error: ${state.message}'));
           } else {
             return Center(child: Text('No tasks available'));
           }
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: canCreateTask
-            ? () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const CreateTaskPage()),
-                );
-              }
-            : null, // Disable the button until "New List" is selected
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CreateTaskPage()),
+          );
+        },
         child: const Icon(Icons.add),
-        backgroundColor:
-            canCreateTask ? Colors.blue : Colors.grey, // Change button color
       ),
     );
   }
 
-  void _showAddMenuDialog(BuildContext context) {
+  Widget _buildPopupMenu() {
+    return PopupMenuButton<Menu>(
+      elevation: 0,
+      color: Color.fromARGB(135, 33, 149, 243),
+      constraints: BoxConstraints.tightFor(height: 410, width: 200),
+      icon: const Icon(
+        Icons.more_vert,
+        color: Colors.white,
+      ),
+      onSelected: (Menu item) {},
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
+        const PopupMenuItem<Menu>(
+          value: Menu.TaskLists,
+          child: Text('Task Lists',
+              style: TextStyle(color: Colors.white, fontSize: 17)),
+        ),
+        const PopupMenuItem<Menu>(
+          value: Menu.AddInBatchMode,
+          child: Text('Add in Batch Mode',
+              style: TextStyle(color: Colors.white, fontSize: 17)),
+        ),
+        const PopupMenuItem<Menu>(
+          value: Menu.RemoveAds,
+          child: Text('Remove Ads',
+              style: TextStyle(color: Colors.white, fontSize: 17)),
+        ),
+        const PopupMenuItem<Menu>(
+          value: Menu.MoreApps,
+          child: Text('More Apps',
+              style: TextStyle(color: Colors.white, fontSize: 17)),
+        ),
+        const PopupMenuItem<Menu>(
+          value: Menu.SendFeedback,
+          child: Text('Send Feedback',
+              style: TextStyle(color: Colors.white, fontSize: 17)),
+        ),
+        const PopupMenuItem<Menu>(
+          value: Menu.FollowUs,
+          child: Text('Follow Us',
+              style: TextStyle(color: Colors.white, fontSize: 17)),
+        ),
+        const PopupMenuItem<Menu>(
+          value: Menu.Settings,
+          child: Text('Settings',
+              style: TextStyle(color: Colors.white, fontSize: 17)),
+        ),
+      ],
+    );
+  }
+
+  void _showNewMenuDialog() {
     final TextEditingController menuController = TextEditingController();
+    final TextEditingController dateController = TextEditingController();
+    DateTime? selectedDate;
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Enter Menu Name'),
+          title: Text('Create New Menu'),
           content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: menuController,
                 decoration: InputDecoration(hintText: 'Menu Name'),
               ),
-              Text(
-                "Due Date",
-                style: TextStyle(
-                  color: Color.fromARGB(135, 33, 149, 243),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-              SizedBox(height: 8),
               TextField(
-                controller: _dateController,
-                style: TextStyle(color: Colors.white),
+                controller: dateController,
                 readOnly: true,
+                decoration: InputDecoration(hintText: 'Select Date'),
                 onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
+                  selectedDate = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2101),
-                    builder: (context, child) {
-                      return Theme(
-                        data: ThemeData.light().copyWith(
-                          colorScheme: ColorScheme.light(
-                            primary: Colors.blue.shade900,
-                            onPrimary: Colors.white,
-                            onSurface: Colors.blue.shade900,
-                          ),
-                        ),
-                        child: child!,
-                      );
-                    },
                   );
-                  if (pickedDate != null) {
-                    _dateController.text =
-                        DateFormat('dd/MM/yyyy').format(pickedDate);
-                    setState(() {
-                      _isDateSelected = true;
-                    });
+                  if (selectedDate != null) {
+                    dateController.text =
+                        DateFormat('yyyy-MM-dd').format(selectedDate!);
                   }
                 },
-                decoration: InputDecoration(
-                  hintText: "Date not set",
-                  hintStyle: TextStyle(color: Colors.white),
-                  suffixIcon: Icon(Icons.calendar_today, color: Colors.white),
-                  enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white)),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                final menuName = menuController.text;
-                final date = _dateController.text;
-                if (menuName.isNotEmpty) {
-                  context.read<MenuBloc>().add(
-                        CreateMenuEvent(menuName: menuName, date: date),
-                      );
+                final String menuName = menuController.text.trim();
+                final String date = dateController.text.trim();
+                if (menuName.isNotEmpty && date.isNotEmpty) {
+                  // Trigger the event to create a new menu
+                  context
+                      .read<MenuBloc>()
+                      .add(CreateMenuEvent(menuname: menuName, date: date));
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Please fill all fields')),
+                    SnackBar(
+                        content: Text('Please fill in all fields'),
+                        duration: Duration(seconds: 3)),
                   );
                 }
               },
-              child: Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showTaskFinishedDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Task Finished'),
-          content: Text('The task has been marked as completed.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK'),
+              child: Text('Submit'),
             ),
           ],
         );

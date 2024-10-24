@@ -1,6 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:notificationapp/login/repository/repository.dart';
-import '../model.dart';
+import 'package:get_storage/get_storage.dart';
+
+
+import '../../login/repository/repository.dart';
+
+import '../../menu/repo/menu_repository.dart';
+import '../models.dart';
 import '../repository/task_repository.dart';
 
 import 'task_event.dart';
@@ -8,115 +15,120 @@ import 'task_state.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:logger/logger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:intl/intl.dart';
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   String channelId = 'task_reminders';
   String channelName = 'Task Reminders';
   String channelDescription = 'Notifications for upcoming tasks and reminders.';
-
+  final GetStorage box = GetStorage();
   final TaskRepository taskRepository;
   final FlutterLocalNotificationsPlugin localNotificationsPlugin;
   final Logger logger = Logger();
-  final UserRepository userRepository; // Add UserRepository here
+  final UserRepository userRepository;
+  final MenuRepository menuRepository; // Add UserRepository here
 
   TaskBloc({
     required this.taskRepository,
     required this.localNotificationsPlugin,
-    required this.userRepository, // Initialize the userRepository
+    required this.userRepository,
+    required this.menuRepository,
   }) : super(TaskInitial()) {
     on<TaskSubmitted>(_ontaskSubmitted);
-    on<FetchTasksByUserId>(_onFetchTasksByUserId);
+    on<FetchTaskEvent>(_onFetchTask);
   }
-
-  // Modify _ontaskSubmitted to use the stored userId
   Future<void> _ontaskSubmitted(
-    TaskSubmitted event,
-    Emitter<TaskState> emit,
-  ) async {
+      TaskSubmitted event, Emitter<TaskState> emit) async {
     emit(TaskLoading());
 
-    // Retrieve the userId from the UserRepository
-    final userId = userRepository.getUserId();
-    if (userId == null) {
-      emit(TaskFailure(message: "User ID is missing"));
-      return;
-    }
-
-    logger.i(
-      'Creating task: ${event.task}, Time: ${event.time}, Date: ${event.date}, UserId: $userId, MenuId: ${event.menuId}'
-    );
-
     try {
-      final newTask = Task(
-        task: event.task,
-        time: event.time,
-        date: event.date,
-        userId: userId, // Use the retrieved userId here
-        menuId: [],
+      final createdTask =
+          await taskRepository.createTask(event.task, event.date, event.time);
+      await _scheduleNotification(
+        localNotificationsPlugin,
+        createdTask.task,
+        event.date,
+        event.time,
       );
-
-      final createdTask = await taskRepository.createTask(newTask);
-      await _scheduleNotification(event.task, event.date, event.time);
-
-      emit(TaskSuccess(tasks: [createdTask]));
+      emit(TaskCreated(task: createdTask));
       logger.i('Task created successfully and notification scheduled');
+      final userId = box.read('userId');
+      final date = box.read('date');
+
+      if (userId == null || date == null) {
+        emit(TaskFailure(message: 'User ID or date is missing'));
+        return;
+      }
+      add(FetchTaskEvent(userId: userId, date: date));
     } catch (error) {
       logger.e('Error creating task: $error');
       emit(TaskFailure(message: error.toString()));
     }
   }
 
-  // Modify _onFetchTasksByUserId to use the stored userId
-  Future<void> _onFetchTasksByUserId(
-    FetchTasksByUserId event,
-    Emitter<TaskState> emit,
-  ) async {
-    emit(TaskLoading());
+  Future<void> _onFetchTask(
+      FetchTaskEvent event, Emitter<TaskState> emit) async {
+    emit(TaskLoading()); // Emit loading state
 
-    // Retrieve the userId from the UserRepository
-    final userId = userRepository.getUserId();
-    if (userId == null) {
-      emit(TaskFailure(message: "User ID is missing"));
-      return;
-    }
-
-    logger.i('Fetching tasks for userId: $userId');
     try {
-      final tasks = await taskRepository.fetchTasksByUserId(userId);
-      emit(TaskSuccess(tasks: tasks));
-      logger.i('Tasks fetched successfully for userId: $userId');
-    } catch (error) {
-      logger.e('Error fetching tasks: $error');
-      emit(TaskFailure(message: error.toString()));
+      final List<Tasks> tasks = await taskRepository.fetchTasks(
+          userId: event.userId, date: event.date);
+
+      emit(TaskSuccess(
+          taskList: tasks, menuMap: {})); // Emit loaded state with menu list
+    } catch (e) {
+      logger.e("Error fetching menus: $e");
+      emit(TaskFailure(message: 'Failed to fetch menus.'));
     }
   }
 
   Future<void> _scheduleNotification(
-      String task, String date, String time) async {
-    var scheduledTime = DateTime.parse('$date $time');
-    var tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
+      FlutterLocalNotificationsPlugin localNotificationsPlugin,
+      String task,
+      String date,
+      String time) async {
+    try {
+      // Combine date and time into a DateTime object
+      var scheduledTime = DateTime.parse('$date $time');
 
-    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      channelId,
-      channelName,
-      channelDescription: channelDescription,
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+      // Convert to the local timezone using timezone package
+      var tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
 
-    var platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-    );
+      var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'your_channel_id', // Replace with your channel ID
+        'your_channel_name', // Replace with your channel name
+        channelDescription:
+            'Your channel description', // Replace with your channel description
+        importance: Importance.max,
+        priority: Priority.high,
+      );
 
-    await localNotificationsPlugin.zonedSchedule(
-      0,
-      'Task Reminder',
-      task,
-      tzScheduledTime,
-      platformChannelSpecifics,
-      androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+      var platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+      );
+
+      // Schedule the notification
+      await localNotificationsPlugin.zonedSchedule(
+        0, // Notification ID (use a unique one if needed)
+        'Task Reminder', // Notification title
+        task, // Notification body
+        tzScheduledTime, // Scheduled time
+        platformChannelSpecifics,
+        androidAllowWhileIdle: true,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+           payload: jsonEncode({ // Convert your data to JSON
+  
+    'task': task,
+    'date': date,
+    'time': time,
+    
+  }),
+      );
+
+      logger.i('Notification scheduled successfully for $scheduledTime');
+    } catch (e) {
+      logger.i('Error scheduling notification: $e');
+    }
   }
 }

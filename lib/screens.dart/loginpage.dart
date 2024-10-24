@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:notificationapp/login/bloc/login_bloc.dart';
-import 'package:notificationapp/login/bloc/login_event.dart';
-import 'package:notificationapp/login/bloc/login_state.dart';
-import 'package:notificationapp/menu/view.dart';
+import 'package:notificationapp/screens.dart/homepage.dart';
+import 'package:notificationapp/screens.dart/siginin.dart';
+
+
+import '../login/bloc/login_bloc.dart';
+import '../login/bloc/login_event.dart';
+import '../login/bloc/login_state.dart';
+
 
 class Loginpage extends StatelessWidget {
   const Loginpage({super.key});
@@ -18,11 +22,17 @@ class Loginpage extends StatelessWidget {
       body: BlocListener<UserBloc, UserState>(
         listener: (context, state) {
           if (state is UserError) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.message)));
+            // Show SnackBar when there's a UserError
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          } else if (state is UserAlreadyExists) {
+              ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
           } else if (state is UserCreated) {
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User created successfully')));
+                const SnackBar(content: Text('user created   successful')));
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => TaskMenuPage()),
@@ -42,7 +52,7 @@ class Loginpage extends StatelessWidget {
           alignment: Alignment.topLeft,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 570),
+              padding: const EdgeInsets.only(top: 580),
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -56,7 +66,7 @@ class Loginpage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: EdgeInsets.only(left: 110, top: 39),
+                  padding: EdgeInsets.only(left: 110, top: 40),
                   child: Text(
                     'Todo',
                     style: TextStyle(
@@ -69,7 +79,7 @@ class Loginpage extends StatelessWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 180, left: 10, right: 10),
+              padding: const EdgeInsets.only(top: 190, left: 10, right: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -85,21 +95,15 @@ class Loginpage extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: TextFormField(
-                        cursorColor: Colors.blue,
                         controller: mailIdController,
                         decoration: InputDecoration(
-                          enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: Color.fromARGB(135, 33, 149, 243)),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blue),
-                          ),
-                        ),
+                            focusColor: const Color.fromARGB(135, 33, 149, 243),
+                            fillColor: const Color.fromARGB(135, 33, 149, 243),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: Color.fromARGB(135, 33, 149, 243)),
+                            )),
                         style:
                             const TextStyle(color: Colors.white, fontSize: 20),
                       ),
@@ -117,22 +121,16 @@ class Loginpage extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: TextFormField(
-                        cursorColor: Colors.blue,
                         controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          enabledBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                                color: Color.fromARGB(135, 33, 149, 243)),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blue),
-                          ),
-                        ),
+                            focusColor: const Color.fromARGB(135, 33, 149, 243),
+                            fillColor: const Color.fromARGB(135, 33, 149, 243),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: Color.fromARGB(135, 33, 149, 243)),
+                            )),
                         style:
                             const TextStyle(color: Colors.white, fontSize: 20),
                       ),
@@ -140,10 +138,10 @@ class Loginpage extends StatelessWidget {
                   ),
                   Center(
                       child: Padding(
-                    padding: const EdgeInsets.only(top: 30),
+                    padding: const EdgeInsets.only(top: 50),
                     child: SizedBox(
-                        height: 40,
-                        width: 100,
+                        height: 50,
+                        width: 110,
                         child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                                 backgroundColor:
@@ -157,33 +155,22 @@ class Loginpage extends StatelessWidget {
                               final password = passwordController.text;
                               context.read<UserBloc>().add(
                                   CreateUser(email: email, password: password));
-                              context.read<UserBloc>().add(
-                                  SignInUser(email: email, password: password));
                             },
                             child: const Text(
                               'Login',
                               style: TextStyle(color: Color(0xFFFFF8F8)),
                             ))),
                   )),
-                  Center(
-                      child: Padding(
-                    padding: const EdgeInsets.only(top: 30),
-                    child: SizedBox(
-                        height: 40,
-                        width: 100,
-                        child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color.fromARGB(135, 33, 149, 243),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                )),
-                            onPressed: () {},
-                            child: const Text(
-                              'signin',
-                              style: TextStyle(color: Color(0xFFFFF8F8)),
-                            ))),
-                  )),
+                  ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  Signpage()), // Navigate to NewPage
+                        );
+                      },
+                      child: Text('sigin'))
                 ],
               ),
             ),

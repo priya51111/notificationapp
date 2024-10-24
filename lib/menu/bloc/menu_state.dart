@@ -1,4 +1,4 @@
-import '../../task/model.dart';
+
 import '../model.dart';
 
 abstract class MenuState {}
@@ -12,12 +12,15 @@ class MenuLoaded extends MenuState {
 
   MenuLoaded({required this.menuList});
 }
-
 class MenuCreated extends MenuState {
-  final String menuId; // Store the created menuId
+  final String menuId; // Required
+  final String menuname; // Optional
 
-  MenuCreated({required this.menuId});
+  MenuCreated({required this.menuId,  required this.menuname}); // menuname is optional
+
+  
 }
+
 
 class MenuError extends MenuState {
   final String message;

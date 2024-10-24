@@ -17,7 +17,3 @@ class SignInUser extends UserEvent {
 class SignOutUser extends UserEvent {}
 
 class CheckTokenExpiry extends UserEvent {}
-
-
-
-
